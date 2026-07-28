@@ -1,330 +1,296 @@
-# 인증·인가와 연관관계 기반 웹 서비스
+# FlowTask — 인증·인가와 연관관계 기반 할 일 관리 서비스
 
-## 프로젝트 개요
+FastAPI의 `Depends` 기반 인증·인가, SQLAlchemy 연관관계, 상태 변경 비즈니스 로직을 하나의 사용자 흐름으로 구현한 Jinja2 SSR 웹 서비스이다. 사용자는 로그인 후 자신의 프로젝트와 할 일을 생성하고, 할 일 상태를 **대기 → 진행 중 → 완료**로 변경하거나 완료된 작업을 다시 열 수 있다.
 
-이전 미션에서 구현한 FastAPI 웹 애플리케이션에 사용자 인증과 접근 제어를 통합하고, SQLAlchemy 연관관계와 상태 변경 중심의 비즈니스 로직을 구현하는 웹 서비스 확장 프로젝트이다.
+![FlowTask 홈 화면](docs/screenshots/home.png)
 
-로그인은 사용자의 신원을 확인하는 **인증(Authentication)** 과정이고, 특정 기능에 접근할 수 있는지 판단하는 것은 **인가(Authorization)** 과정이다. FastAPI의 의존성 주입(`Depends`)과 미들웨어를 활용해 두 책임을 분리하고, 로그인 여부에 따라 접근 가능한 화면과 기능이 달라지도록 구현한다.
+## 주요 기능
 
-- 프로젝트 유형: FastAPI 기반 SSR 웹 서비스
-- 서비스 주제: 3개 이상의 모델과 상태 변경 로직을 포함할 수 있는 자유 주제
-- 핵심 학습 내용: 인증, 인가, SQLAlchemy 연관관계, 상태 변경 비즈니스 로직
-- 구현 기반: 이전 미션에서 만든 웹 애플리케이션
+- 서명된 세션 쿠키 기반 로그인·로그아웃
+- PBKDF2-SHA256 비밀번호 해싱과 회원가입
+- 비로그인 사용자의 보호 페이지 접근 차단
+- 사용자별 프로젝트 소유권 검사
+- `User → Project → Task` 연관관계 데이터 출력
+- 서비스 계층에서 검증하는 할 일 상태 전이
+- 프로젝트 검색, 할 일 검색·상태 필터
+- GitHub OAuth2 Authorization Code Flow
+- CSRF 토큰 검증과 일관된 전역 예외 화면
+- 데스크톱·모바일 반응형 Jinja2 SSR UI
 
 ## 개발 환경
 
-Python 3.10 이상과 FastAPI를 사용한다. 주요 화면은 Jinja2 템플릿 기반의 SSR 방식으로 렌더링하고, 핵심 데이터는 SQLAlchemy ORM과 관계형 데이터베이스에 저장한다.
+| 항목 | 버전 또는 선택 사항 |
+| --- | --- |
+| Python | 3.10 이상, 로컬 검증 3.14.5 |
+| FastAPI | 0.116.1 |
+| Uvicorn | 0.35.0 |
+| SQLAlchemy | 2.0.41 |
+| Jinja2 | 3.1.6 |
+| python-multipart | 0.0.20 |
+| itsdangerous | 2.2.0 |
+| passlib | 1.7.4 |
+| 데이터베이스 | SQLite |
 
-- Python: 3.10 이상
-- 웹 프레임워크: FastAPI
-- 실행 서버: Uvicorn
-- ORM: SQLAlchemy
-- 템플릿 엔진: Jinja2
-- 데이터베이스: SQLite 또는 PostgreSQL
-- 필수 패키지: `fastapi`, `uvicorn`, `sqlalchemy`, `jinja2`, `python-multipart`
-- 인증 관련 선택 패키지: `python-jose`, `passlib`, `bcrypt`, `itsdangerous`, `starlette`
+과제에서 허용한 패키지만 사용했다. GitHub OAuth 토큰 교환은 추가 HTTP 라이브러리 없이 Python 표준 라이브러리 `urllib`로 구현했다.
 
-인증은 다음 방식 중 하나를 선택하여 구현한다.
+## 인증 정보
 
-- 세션 기반 인증: 로그인 성공 시 서버 세션과 쿠키에 사용자 정보를 저장하고 이후 요청에서 인증 여부를 확인한다.
-- JWT 기반 인증: 로그인 성공 시 JWT를 발급하고 이후 요청에 포함된 토큰으로 인증 여부를 확인한다.
+| 항목 | 내용 |
+| --- | --- |
+| 인증 방식 | 서명된 세션 쿠키 |
+| 선택 이유 | 브라우저 중심 Jinja2 SSR 서비스에서는 서버가 세션 상태를 확인하고 로그인 화면으로 리다이렉트하는 흐름이 자연스럽기 때문 |
+| 세션 저장 정보 | 사용자 PK인 `user_id`만 저장 |
+| 테스트 계정 ID | `demo` |
+| 테스트 계정 PW | `demo1234` |
+| 테스트 계정 저장 방식 | 애플리케이션 최초 시작 시 DB에 자동 생성 |
+| 비밀번호 저장 | `passlib`의 PBKDF2-SHA256 단방향 해시 |
 
-선택한 인증 방식과 선택 이유, 테스트 계정 정보는 README에 기록한다.
-
-인증 구현 시 참고할 수 있는 키워드는 `OAuth2PasswordBearer`, `OAuth2PasswordRequestForm`, `python-jose`, `passlib`, `starlette.middleware.sessions`이다. 이는 선택한 인증 방식에 맞게 참고하며, 모두 사용할 필요는 없다.
-
-## 최종 결과물
-
-다음 기능이 정상적으로 동작하는 웹 서비스 1개를 완성한다.
-
-- [ ] 사용자가 로그인과 로그아웃을 할 수 있다.
-- [ ] 로그인 성공과 실패를 명확히 확인할 수 있다.
-- [ ] 로그인 상태에 따라 화면 요소와 접근 가능한 기능이 달라진다.
-- [ ] 비로그인 사용자는 보호된 핵심 기능에 접근할 수 없다.
-- [ ] 최소 3개 이상의 SQLAlchemy ORM 모델이 존재한다.
-- [ ] 모델 사이에 최소 2개 이상의 1:N 또는 N:1 관계가 존재한다.
-- [ ] 연관관계 데이터가 화면에 함께 출력된다.
-- [ ] 단순 CRUD를 넘어 상태가 변경되는 핵심 기능이 최소 1개 존재한다.
-- [ ] 상태 변경 전과 후를 화면 또는 응답 결과에서 명확히 확인할 수 있다.
-- [ ] 로그인부터 결과 확인까지 주요 사용자 흐름이 끊김 없이 연결된다.
-
-## 프로젝트 구조
-
-```text
-B5-3/
-├── README.md
-├── requirements.txt
-├── main.py
-├── database.py
-├── auth/
-│   ├── __init__.py
-│   └── dependencies.py
-├── models/
-│   └── __init__.py
-├── repositories/
-│   └── __init__.py
-├── services/
-│   └── __init__.py
-├── routers/
-│   ├── __init__.py
-│   └── auth.py
-├── templates/
-│   ├── base.html
-│   └── login.html
-├── static/
-└── database.db              # SQLite 선택 시
-```
-
-- `main.py`: FastAPI 애플리케이션 생성, 미들웨어 및 라우터 등록
-- `database.py`: 데이터베이스 연결과 SQLAlchemy 세션 설정
-- `auth/`: 로그인 상태 확인과 인증·인가 의존성
-- `models/`: SQLAlchemy ORM 모델과 연관관계 정의
-- `repositories/`: 데이터 조회, 저장, 수정, 삭제 처리
-- `services/`: 상태 변경을 포함한 핵심 비즈니스 로직
-- `routers/`: HTTP 요청과 응답 및 화면 흐름 처리
-- `templates/`: Jinja2 기반 SSR 화면
-- `static/`: CSS, JavaScript, 이미지 등 정적 파일
-
-실제 프로젝트 구조는 서비스 주제와 선택한 데이터베이스에 맞게 변경할 수 있다. PostgreSQL을 선택하면 `database.db` 파일은 필요하지 않지만, 인증·인가, 요청 처리, 비즈니스 로직, 데이터 접근, 모델, 화면의 역할은 구분한다.
+`SessionMiddleware`가 쿠키 서명과 변조 검증을 담당하고, `auth/dependencies.py`의 `require_user`가 `Depends`를 통해 보호 경로의 인증 여부를 확인한다. 로그인은 사용자의 신원을 확인하는 **인증**, 프로젝트 소유권 검사는 해당 데이터 접근 가능 여부를 판단하는 **인가**에 해당한다.
 
 ## 실행 방법
 
-1. Python 3.10 이상이 설치되어 있는지 확인한다.
-2. 가상환경을 생성하고 활성화한다.
-3. `requirements.txt`의 패키지를 설치한다.
-4. 테스트 계정 또는 회원 데이터를 준비한다.
-5. Uvicorn으로 FastAPI 서버를 실행한다.
-6. 브라우저에서 공개 페이지와 보호 페이지의 접근 정책을 확인한다.
-7. 로그인 후 데이터 생성, 조회, 상태 변경, 결과 확인 흐름을 테스트한다.
+### macOS/Linux
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Windows에서는 다음 명령으로 가상환경을 활성화한다.
+### Windows
 
 ```powershell
+python -m venv .venv
 .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
-## 인증 정보
+브라우저에서 <http://127.0.0.1:8000>에 접속한다. 첫 실행 시 `database.db`와 테스트 계정이 자동으로 생성된다.
 
-구현한 방식에 맞게 아래 내용을 작성한다.
+운영 또는 공유 환경에서는 반드시 `APP_SECRET_KEY`를 긴 무작위 값으로 설정한다.
 
-| 항목 | 내용 |
-| --- | --- |
-| 인증 방식 | 세션 또는 JWT |
-| 선택 이유 | 구현 후 작성 |
-| 테스트 계정 ID | 구현 후 작성 |
-| 테스트 계정 PW | 구현 후 작성 |
-| 계정 저장 방식 | 인메모리 또는 데이터베이스 |
+```bash
+APP_SECRET_KEY='replace-with-a-random-secret' uvicorn main:app
+```
+
+지원하는 환경 변수는 [.env.example](.env.example)에서 확인할 수 있다.
 
 ## 공개·보호 경로 정책
 
-아래 경로와 HTTP 메서드는 예시이며, 실제 라우터 설계에 맞게 표를 수정한다.
+| HTTP | 경로 | 정책 | 설명 |
+| --- | --- | --- | --- |
+| `GET` | `/` | 공개 | 로그인 상태에 따라 CTA와 메뉴가 달라지는 홈 |
+| `GET`, `POST` | `/login` | 공개 | 로그인 화면과 인증 처리 |
+| `GET`, `POST` | `/signup` | 공개 | 회원가입 화면과 계정 생성 |
+| `GET` | `/auth/github` | 공개 | GitHub OAuth 인증 시작 |
+| `GET` | `/auth/github/callback` | 공개 | OAuth state 검증 및 로그인 완료 |
+| `GET` | `/health` | 공개 | 배포 상태 확인 |
+| `GET` | `/docs`, `/redoc`, `/openapi.json` | 공개 | FastAPI 자동 API 문서 |
+| `POST` | `/logout` | 보호 | 세션 제거 및 로그아웃 |
+| 모든 메서드 | `/app/**` | 보호 | 프로젝트와 할 일 기능 |
 
-| 경로 | 공개 여부 | 설명 |
-| --- | --- | --- |
-| `/` | 공개 | 서비스 소개 또는 메인 화면 |
-| `/login` | 공개 | 로그인 화면 및 로그인 요청 처리 |
-| `/logout` | 보호 | 로그아웃 처리 |
-| `/signup` | 공개 | 회원가입 화면, 구현한 경우에만 사용 |
-| `/app/**` | 보호 | 로그인 후 이용하는 핵심 도메인 기능 |
+비로그인 사용자가 `/app/**`에 접근하면 `AuthenticationRequired` 예외가 발생하고, 전역 예외 처리기가 원래 경로를 `next`에 담아 로그인 화면으로 이동시킨다.
 
 ## 주요 기능 경로
 
-| 기능 | HTTP 메서드 | 경로 | 설명 |
-| --- | --- | --- | --- |
-| 메인 화면 | `GET` | `/` | 서비스 소개와 로그인 상태 표시 |
-| 로그인 화면 | `GET` | `/login` | 로그인 폼 출력 |
-| 로그인 처리 | `POST` | `/login` | 사용자 인증 처리 |
-| 로그아웃 | `POST` 또는 `GET` | `/logout` | 인증 정보 제거 |
-| 도메인 목록 | `GET` | `/app/...` | 연관관계가 포함된 핵심 데이터 조회 |
-| 데이터 생성 | `POST` | `/app/...` | 핵심 데이터 생성 |
-| 상태 변경 | `POST` 또는 `PATCH` | `/app/.../{id}/status` | 도메인 객체 상태 변경 |
+| 기능 | HTTP | 경로 |
+| --- | --- | --- |
+| 프로젝트 목록·검색 | `GET` | `/app/projects?q=검색어` |
+| 프로젝트 생성 | `POST` | `/app/projects` |
+| 프로젝트와 연결된 할 일 조회 | `GET` | `/app/projects/{project_id}` |
+| 할 일 검색·필터 | `GET` | `/app/projects/{project_id}?q=검색어&status=completed` |
+| 할 일 생성 | `POST` | `/app/projects/{project_id}/tasks` |
+| 할 일 상태 변경 | `POST` | `/app/tasks/{task_id}/status` |
+| 할 일 삭제 | `POST` | `/app/tasks/{task_id}/delete` |
+| 프로젝트와 자식 할 일 삭제 | `POST` | `/app/projects/{project_id}/delete` |
+
+## 데이터 모델과 연관관계
+
+```mermaid
+erDiagram
+    USER ||--o{ PROJECT : owns
+    PROJECT ||--o{ TASK : contains
+
+    USER {
+        int id PK
+        string username UK
+        string display_name
+        string password_hash
+        string oauth_provider
+        string oauth_subject
+    }
+    PROJECT {
+        int id PK
+        int owner_id FK
+        string name
+        text description
+    }
+    TASK {
+        int id PK
+        int project_id FK
+        string title
+        text description
+        string status
+    }
+```
+
+- `User.projects ↔ Project.owner`: 사용자 한 명이 여러 프로젝트를 소유하는 양방향 1:N 관계
+- `Project.tasks ↔ Task.project`: 프로젝트 하나가 여러 할 일을 포함하는 양방향 1:N 관계
+- 사용자 삭제 시 프로젝트, 프로젝트 삭제 시 할 일은 `cascade="all, delete-orphan"`와 DB `ON DELETE CASCADE`로 함께 삭제된다.
+- 자식 데이터가 부모 없이 존재할 비즈니스 의미가 없으므로 cascade 정책을 선택했으며, 선택 이유를 모델 코드 주석으로 기록했다.
+- N:M 관계는 사용하지 않았다.
+
+## 상태 변경 비즈니스 로직
+
+상태 변경 규칙은 라우터가 아니라 `services/task_service.py`에서 검증한다.
+
+| 현재 상태 | 허용되는 다음 상태 | 화면 동작 |
+| --- | --- | --- |
+| 대기 (`todo`) | 진행 중 (`in_progress`) | 진행 시작 |
+| 진행 중 (`in_progress`) | 완료 (`completed`), 대기 (`todo`) | 완료하기, 대기로 |
+| 완료 (`completed`) | 대기 (`todo`) | 다시 열기 |
+
+대기 상태에서 바로 완료하는 등 허용되지 않은 전이는 `AppError`로 차단한다. 성공한 상태 변경은 `대기 → 진행 중`과 같은 플래시 메시지와 카드 색상·버튼 변화로 즉시 확인할 수 있다.
+
+![완료 상태가 표시된 프로젝트 상세 화면](docs/screenshots/task-completed.png)
+
+## 코드 구조
+
+```text
+B5-3/
+├── main.py                  # 앱 생성, 미들웨어, 전역 예외 처리
+├── config.py                # 환경 변수 설정
+├── database.py              # 엔진, 세션, SQLite FK 활성화
+├── auth/                    # 인증 의존성, CSRF, GitHub OAuth
+├── models/                  # User, Project, Task ORM 모델
+├── repositories/            # DB 조회·저장·삭제
+├── services/                # 인증과 상태 변경 비즈니스 규칙
+├── routers/                 # 요청·응답과 화면 흐름
+├── templates/               # Jinja2 SSR 화면
+├── static/                  # 반응형 CSS
+├── tests/                   # 도메인·HTTP 통합 검사
+├── docs/screenshots/        # 제출용 실행 화면
+├── render.yaml              # Render Blueprint
+└── requirements.txt
+```
+
+## 보안 설계
+
+- 비밀번호 원문을 저장하지 않고 PBKDF2-SHA256 해시만 저장한다.
+- 서명된 세션에는 최소 정보인 사용자 ID만 저장한다.
+- 모든 데이터 변경 폼에서 세션별 CSRF 토큰을 검증한다.
+- OAuth 콜백에서 일회성 `state`를 상수 시간 비교해 로그인 CSRF를 차단한다.
+- 프로젝트와 할 일 접근 전 소유자 ID를 검사한다.
+- SQLite 연결마다 `PRAGMA foreign_keys=ON`을 적용한다.
+- 운영 배포에서는 HTTPS 전용 세션 쿠키를 사용한다.
+- 없는 데이터, 잘못된 접근, 인증 실패를 공통 예외 화면 또는 로그인 리다이렉트로 처리한다.
+
+## GitHub 소셜 로그인 설정
+
+1. GitHub의 **Settings → Developer settings → OAuth Apps**에서 OAuth App을 생성한다.
+2. 로컬 개발의 Authorization callback URL을 `http://127.0.0.1:8000/auth/github/callback`으로 지정한다.
+3. 발급받은 값을 환경 변수로 설정한다.
+
+```bash
+export GITHUB_CLIENT_ID='...'
+export GITHUB_CLIENT_SECRET='...'
+uvicorn main:app --reload
+```
+
+배포 환경에서는 콜백 URL을 `https://서비스주소/auth/github/callback`으로 변경한다. 클라이언트 비밀값은 저장소에 커밋하지 않는다.
+
+## 테스트와 결과 확인
+
+### 도메인 검사
+
+```bash
+.venv/bin/python tests/domain_checks.py
+```
+
+다음을 실제 SQLite DB에서 확인한다.
+
+- 비밀번호 해시 저장
+- `User → Project → Task` 두 개의 1:N 관계
+- 허용·차단되는 상태 전이
+- 사용자 삭제 시 프로젝트와 할 일 cascade 삭제
+
+### HTTP 통합 검사
+
+서버를 실행한 상태에서 다음 명령을 사용한다.
+
+```bash
+FLOWTASK_BASE_URL=http://127.0.0.1:8000 \
+  .venv/bin/python tests/integration_smoke.py
+```
+
+익명 접근 차단, 로그인 성공·실패, 회원가입, 사용자별 인가, 프로젝트·할 일 생성, 상태 변경, 검색·필터, CSRF, 로그아웃, OAuth 미설정 오류, 404를 검증한다.
+
+GitHub Actions는 push와 pull request마다 컴파일, 도메인 검사, HTTP 통합 검사를 실행한다. 브라우저 QA 결과와 증거 화면은 `.gstack/qa-reports/`에 저장되며 2026-07-28 기준 점수는 **100/100**이다.
+
+## 외부 배포
+
+저장소의 `render.yaml`은 Render 공식 FastAPI 구성에 맞춰 빌드 명령 `pip install -r requirements.txt`, 시작 명령 `uvicorn main:app --host 0.0.0.0 --port $PORT`, `/health` 상태 확인, HTTPS 전용 쿠키를 선언한다.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/myy-dev/B5-3)
+
+배포 후 Render 환경 변수에 GitHub OAuth App의 `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`을 입력한다. 무료 Render 인스턴스의 로컬 SQLite 파일은 재배포 시 초기화될 수 있으므로 이 구성은 과제 시연용이다.
 
 ## 수행 항목 체크리스트
 
-### 인증
+### 인증·인가와 UI
 
-- [ ] FastAPI의 `Depends`를 활용하여 인증 로직 구현
-- [ ] 세션 또는 JWT 기반 인증 방식 중 하나 선택
-- [ ] 로그인 기능 구현
-- [ ] 로그인 성공과 실패 결과를 사용자에게 명확히 표시
-- [ ] 로그아웃 기능 구현
-- [ ] 테스트 계정을 인메모리 또는 DB에 저장
-- [ ] 테스트 계정 ID와 비밀번호를 README에 명시
-- [ ] 선택한 인증 방식과 선택 이유를 README에 명시
-- [ ] 공개·보호 경로를 구분하는 미들웨어 또는 `Depends` 함수를 `auth/` 등의 별도 모듈로 분리
+- [x] FastAPI `Depends` 기반 세션 인증
+- [x] 로그인 성공·실패 안내와 로그아웃
+- [x] DB 테스트 계정과 README ID/PW 명시
+- [x] 공개·보호 경로 정책 표
+- [x] 비로그인 보호 화면 접근 차단과 로그인 이동
+- [x] 로그인 전·후 메뉴, 환영 문구, 버튼 변화
+- [x] 인증 로직을 `auth/` 모듈로 분리
 
-### 접근 제어(인가)
+### 모델·연관관계·데이터
 
-- [ ] 비로그인 사용자의 보호 페이지 접근 차단
-- [ ] 보호 자원 접근 시 로그인 페이지로 이동하거나 차단 안내 표시
-- [ ] 공개 페이지와 보호 페이지를 명확히 구분
-- [ ] 공개·보호 경로 정책을 README에 표로 작성
-- [ ] 접근 제어가 처리되는 위치와 흐름 설명 가능
+- [x] SQLAlchemy ORM 모델 3개
+- [x] 1:N 관계 2개와 `back_populates` 양방향 관계
+- [x] 관계 데이터를 DB에서 조회해 화면에 함께 출력
+- [x] 부모 삭제 시 자식 처리 정책과 코드 주석
+- [x] SQLite 관계형 DB에 모든 핵심 데이터 저장
+- [x] N:M 관계 미사용
 
-### 인증 상태에 따른 UI 변화
+### 비즈니스 기능과 화면 흐름
 
-- [ ] 로그인 전 화면에 로그인 버튼 표시
-- [ ] 로그인 후 사용자 환영 문구 표시
-- [ ] 로그인 후 로그아웃 버튼 표시
-- [ ] 로그인 상태에 따라 핵심 기능 메뉴의 노출 또는 접근 여부 변경
+- [x] 단순 CRUD를 넘는 상태 변경 기능
+- [x] 상태 전이 규칙을 서비스 계층에 분리
+- [x] 상태 변경 전·후를 메시지와 UI에서 확인
+- [x] 로그인 → 기능 진입 → 생성·조회 → 상태 변경 → 결과 확인
+- [x] 모든 주요 화면 Jinja2 SSR 렌더링
 
-### 도메인 모델 및 연관관계
+### 코드와 제출물
 
-- [ ] SQLAlchemy ORM 모델 최소 3개 이상 구현
-- [ ] 1:N 또는 N:1 연관관계 최소 2개 이상 구현
-- [ ] `relationship`와 `back_populates`를 사용한 양방향 관계 최소 1개 구현
-- [ ] N:M 관계가 필요한 경우 중간 모델로 분리
-- [ ] 연관관계 데이터를 DB 기준으로 조회
-- [ ] 관계 데이터가 함께 출력되는 화면 구현
-- [ ] 부모 모델 삭제 시 자식 모델 처리 정책 선택
-- [ ] cascade 또는 수동 삭제 정책의 선택 이유를 코드 주석으로 작성
-- [ ] 모델 매핑 방식과 선택 이유 설명 가능
+- [x] `auth`, `routers`, `services`, `repositories`, `models`, `templates` 역할 분리
+- [x] Python·주요 패키지 버전
+- [x] 가상환경·설치·실행 방법
+- [x] 테스트 계정과 인증 방식 선택 이유
+- [x] 공개·보호 정책과 주요 경로 목록
+- [x] 전체 소스코드 GitHub 저장소
+- [x] 데스크톱·모바일 실행 화면
+- [x] 허용된 외부 패키지만 사용
+- [x] 복잡한 역할 체계 없이 로그인 여부와 데이터 소유권만 검사
 
-### 핵심 비즈니스 기능
+### 보너스
 
-- [ ] 상태가 변경되는 기능 최소 1개 이상 구현
-- [ ] 상태 변경 규칙을 서비스 계층에 구현
-- [ ] 상태 변경 전과 후를 화면 또는 응답에서 확인 가능
-- [ ] 상태 변경 로직의 필요성과 구현 위치 설명 가능
+- [x] 커스텀 예외와 전역 예외 처리
+- [x] 프로젝트 검색과 할 일 검색·상태 필터
+- [x] GitHub OAuth2 Authorization Code Flow 구현
+- [x] 회원가입과 비밀번호 해싱
+- [x] Render Blueprint와 환경 변수 기반 배포 구성
+- [ ] 외부 URL 배포 및 GitHub OAuth 실계정 최종 확인
 
-서비스 주제와 상태 변경 예시는 다음과 같다.
+## 학습 목표 설명
 
-| 서비스 주제 | 모델 예시 | 상태 변경 예시 |
-| --- | --- | --- |
-| 도서 대여 서비스 | 회원, 도서, 대여 기록 | 대여 중 → 반납 완료 |
-| 주문 관리 서비스 | 회원, 상품, 주문 | 주문 접수 → 배송 중 → 배송 완료 또는 주문 취소 |
-| 예약 시스템 | 회원, 서비스, 예약 | 예약 대기 → 예약 확정 또는 예약 취소 |
-| 할 일 관리 서비스 | 회원, 프로젝트, 할 일 | 진행 중 → 완료 또는 완료 → 미완료 |
-| 게시판 서비스 | 회원, 게시판, 게시글 | 공개 → 비공개 또는 삭제 |
-
-### 데이터 저장
-
-- [ ] 모든 핵심 데이터를 SQLAlchemy ORM으로 처리
-- [ ] SQLite 또는 PostgreSQL 사용
-- [ ] 연관관계 데이터를 관계형 데이터베이스에 저장
-- [ ] 연관관계 데이터를 DB 기준으로 조회
-
-### 화면 흐름 통합
-
-- [ ] 모든 주요 화면을 Jinja2 기반 SSR로 렌더링
-- [ ] 로그인 → 핵심 기능 진입 흐름 연결
-- [ ] 데이터 생성 → 조회 흐름 연결
-- [ ] 상태 변경 → 결과 확인 흐름 연결
-- [ ] 전체 서비스 흐름을 사용자 관점에서 설명 가능
-- [ ] 인증, 도메인, 화면 구조를 개발자 관점에서 설명 가능
-
-### 코드 구조
-
-- [ ] 인증·인가 로직을 `auth/`에 분리
-- [ ] 요청과 응답 처리를 `routers/`에 분리
-- [ ] 비즈니스 로직을 `services/`에 분리
-- [ ] 데이터 접근을 `repositories/`에 분리
-- [ ] SQLAlchemy 모델을 `models/`에 분리
-- [ ] Jinja2 화면을 `templates/`에 분리
-- [ ] 특정 기능이 한 파일 또는 한 계층에 과도하게 집중되지 않도록 구성
-
-### 제출물 구성
-
-- [ ] 전체 프로젝트 소스코드가 포함된 GitHub 저장소 링크
-- [ ] Python 버전과 주요 패키지 버전 명시
-- [ ] 가상환경 생성 방법 명시
-- [ ] 패키지 설치 방법 명시
-- [ ] 서버 실행 방법 명시
-- [ ] 테스트 계정 정보 명시
-- [ ] 공개·보호 경로 정책 표 작성
-- [ ] 주요 기능 경로 목록 작성
-- [ ] 세션 또는 JWT 인증 방식 선택 이유 작성
-- [ ] 주요 화면 스크린샷 또는 시연 영상 첨부(선택)
-
-## 보너스 과제
-
-### 전역 예외 처리
-
-- [ ] 잘못된 접근과 존재하지 않는 데이터 요청을 공통 처리
-- [ ] 사용자에게 일관된 오류 안내 제공
-
-배움 포인트: FastAPI의 `@app.exception_handler`와 커스텀 예외 클래스를 경험한다.
-
-### 검색 및 필터
-
-- [ ] 목록 또는 연관관계 데이터에 검색·필터 기능 1개 이상 구현
-
-배움 포인트: 쿼리 파라미터 기반 필터링과 SQLAlchemy의 동적 쿼리 구성을 경험한다.
-
-### OAuth2 소셜 로그인
-
-- [ ] Google 또는 GitHub 등 외부 계정 로그인 구현
-
-배움 포인트: OAuth2 Authorization Code Flow와 외부 IdP 연동을 경험한다.
-
-### 비밀번호 해싱 및 회원가입
-
-- [ ] 사용자 회원가입 기능 구현
-- [ ] 비밀번호를 해싱하여 DB에 저장
-
-배움 포인트: `passlib` 또는 `bcrypt`를 활용한 비밀번호 보안 처리를 경험한다.
-
-### 외부 배포
-
-- [ ] Render 또는 Railway 등의 클라우드 환경에 배포
-- [ ] 외부에서 접속 가능한 URL 제출
-
-배움 포인트: Python 웹 서비스의 클라우드 배포 과정과 환경 변수 관리를 경험한다.
-
-## 제약 사항
-
-- [ ] Python 3.10 이상 사용
-- [ ] 핵심 패키지는 지정된 범위 안에서 사용
-- [ ] 지정 범위를 벗어나는 외부 라이브러리 추가 금지
-- [ ] 인증, 도메인, 데이터 접근, 화면 처리 역할 분리
-- [ ] 모델 간 연관관계가 코드에서 명확히 드러나도록 구현
-- [ ] 복잡한 다단계 역할 기반 접근 제어는 필수가 아니며, 로그인·비로그인 구분 수준으로 구현
-- [ ] OAuth2 소셜 로그인은 선택 보너스 과제로 구현
-- [ ] 주요 화면은 Jinja2 템플릿 기반 SSR로 구현
-- [ ] 핵심 데이터는 SQLAlchemy ORM과 관계형 DB에 저장
-
-## 결과 확인 예시
-
-아래 내용은 정답이 아닌 참고 예시이며, 실제 문구와 디자인은 자유롭게 구성할 수 있다.
-
-### 로그인 전
-
-- 서비스 이름과 로그인 버튼이 보인다.
-- 핵심 기능 메뉴는 숨겨져 있거나 클릭하면 로그인 페이지로 이동한다.
-- 보호된 URL에 직접 접근해도 핵심 기능 화면이 노출되지 않는다.
-
-### 로그인 후
-
-- 사용자 이름이 포함된 환영 문구가 보인다.
-- 로그아웃 버튼이 보인다.
-- 핵심 기능 메뉴가 활성화되고 정상적으로 접근할 수 있다.
-
-### 연관관계 데이터
-
-- 사용자 상세 화면에서 해당 사용자가 등록한 데이터 목록이 함께 보인다.
-- 주문 상세 화면에서 주문과 연관된 항목 목록이 함께 보인다.
-
-### 상태 변경
-
-- 예약 완료 상태를 예약 취소 상태로 변경할 수 있다.
-- 생성된 주문을 주문 취소 상태로 변경할 수 있다.
-- 상태 변경 전과 후의 값이 화면에서 명확히 구분된다.
-
-## 학습 목표
-
-프로젝트 완료 후 다음 내용을 스스로 설명할 수 있어야 한다.
-
-- FastAPI에서 `Depends` 기반 인증과 인가가 처리되는 전체 흐름
-- 비로그인 요청이 차단되는 이유와 실제 처리 위치
-- SQLAlchemy 연관관계를 객체 관점에서 매핑한 방법과 선택 이유
-- 단순 CRUD와 상태 변경 비즈니스 로직의 차이
-- 상태 변경 로직을 서비스 계층에 배치한 이유
-- 인증 → 도메인 기능 → 화면으로 이어지는 전체 구조
-- 사용자가 로그인부터 결과 확인까지 서비스를 이용하는 과정
+- **인증 흐름:** 로그인 폼 → `AuthService.authenticate` → 세션에 사용자 ID 저장 → `Depends(require_user)`가 후속 요청을 검증한다.
+- **인가 흐름:** `ProjectService`와 `TaskService`가 현재 사용자 ID와 프로젝트 `owner_id`를 비교해 다른 사용자의 데이터를 차단한다.
+- **객체 관계:** `User.projects`, `Project.owner`, `Project.tasks`, `Task.project`로 FK 데이터를 객체 그래프로 탐색한다.
+- **상태 로직:** 상태 전이는 데이터 수정 이상의 도메인 규칙이므로 HTTP 라우터가 아닌 서비스 계층에서 허용 목록으로 관리한다.
+- **전체 구조:** 라우터가 입력과 응답을 맡고, 서비스가 규칙을 적용하며, 저장소가 DB를 조작하고, Jinja2 화면이 사용자에게 결과를 전달한다.

@@ -1,0 +1,36 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Compile source
+        run: python -m compileall -q .
+      - name: Run domain checks
+        run: python tests/domain_checks.py
+      - name: Run HTTP integration checks
+        shell: bash
+        run: |
+          DATABASE_URL=sqlite:///./ci-database.db APP_SECRET_KEY=ci-only-secret \
+            uvicorn main:app --host 127.0.0.1 --port 8765 &
+          FLOWTASK_SERVER_PID=$!
+          trap 'kill "$FLOWTASK_SERVER_PID"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8765/health > /dev/null; then
+              break
+            fi
+            sleep 0.5
+          done
+          FLOWTASK_BASE_URL=http://127.0.0.1:8765 python tests/integration_smoke.py
+
