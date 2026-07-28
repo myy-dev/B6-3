@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, String, UniqueConstraint
@@ -25,7 +25,7 @@ class User(Base):
     oauth_provider: Mapped[str | None] = mapped_column(String(30))
     oauth_subject: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
     # A project has no meaning without its owner, so deleting a user removes orphaned projects.

@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import RedirectResponse
 
-from auth.dependencies import DbSession, OptionalUser
+from auth.dependencies import CurrentUser, DbSession, OptionalUser
 from auth.oauth import fetch_github_user, github_authorize_url
 from auth.security import safe_next_url, validate_csrf
 from exceptions import AppError
@@ -104,6 +104,7 @@ def signup(
 @router.post("/logout", name="logout")
 def logout(
     request: Request,
+    _user: CurrentUser,
     csrf: Annotated[str, Form()],
 ):
     validate_csrf(request, csrf)
@@ -146,4 +147,3 @@ def github_callback(
     request.session["user_id"] = user.id
     add_flash(request, "GitHub 계정으로 로그인했습니다.")
     return RedirectResponse("/app/projects", status_code=303)
-
