@@ -57,6 +57,25 @@ class Browser:
 
 
 class FlowTaskIntegrationTest(unittest.TestCase):
+    def test_stylesheet_preserves_public_https_origin(self) -> None:
+        browser = Browser()
+        status, _url, body = browser.request("/")
+        self.assertEqual(status, 200)
+        match = re.search(r'<link rel="stylesheet" href="([^"]+)"', body)
+        self.assertIsNotNone(match)
+        href = match.group(1)
+        # A TLS proxy may forward HTTP internally; assets must keep the public origin.
+        public_asset = urllib.parse.urlsplit(
+            urllib.parse.urljoin("https://public.example/", href)
+        )
+        self.assertEqual(public_asset.scheme, "https")
+        self.assertEqual(public_asset.netloc, "public.example")
+        status, _url, stylesheet = browser.request(
+            urllib.parse.urlunsplit(("", "", public_asset.path, public_asset.query, ""))
+        )
+        self.assertEqual(status, 200)
+        self.assertIn(".hero", stylesheet)
+
     def test_expired_post_returns_to_project_list_after_login(self) -> None:
         browser = Browser()
         status, final_url, body = browser.request(
