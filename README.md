@@ -211,7 +211,7 @@ uvicorn main:app --reload
 
 - [x] 환경 변수 기반 실행 설정과 배포 시작 명령 구성
 - [x] Railway 웹 서비스·SQLite 영구 볼륨 배포 절차 문서화
-- [ ] Railway에 실제 배포하고 외부 접속 URL 제출
+- [x] Railway에 실제 배포하고 외부 접속 URL 제출
 
 ## 제약 사항
 
@@ -229,6 +229,7 @@ uvicorn main:app --reload
 
 ## 결과물
 
+- [배포 서비스](https://flowtask-production-b5b4.up.railway.app/): Railway 공개 주소
 - [테스트 계정과 인증 방식](docs/authentication.md): 데모 계정, 세션 인증 선택 이유, 비밀번호 저장 방식
 - [경로와 접근 정책](docs/routes.md): 공개·보호 경로 정책과 주요 기능 경로
 - [서비스 구조와 동작](docs/architecture.md): 인증·인가 흐름, 모델 관계, 상태 전이, 보안 설계, 학습 목표

@@ -38,7 +38,16 @@ GitHub OAuth 흐름은 구현돼 있으나 실제 외부 계정과 배포 주소
 
 ## Railway 배포
 
-Railway 웹 서비스 하나에 영구 볼륨을 연결해 SQLite 데이터를 보존한다. 실제 외부 배포는 아직 완료하지 않았다.
+Railway 웹 서비스 하나에 영구 볼륨을 연결해 SQLite 데이터를 보존한다. 2026-11-03 공개 주소를 생성하고 배포 서버에서 기본 기능을 검증했다.
+
+| 항목 | 설정 |
+| --- | --- |
+| 공개 주소 | <https://flowtask-production-b5b4.up.railway.app/> |
+| 상태 확인 | <https://flowtask-production-b5b4.up.railway.app/health> |
+| 배포 브랜치 | `codex/railway-deploy` |
+| 영구 저장 경로 | `/data/database.db` |
+
+GitHub 소셜 로그인은 Client ID·Secret 설정과 실계정 검증이 남아 있다. Railway 체험 기간과 크레딧 잔액은 대시보드에서 확인하고, 제출 기간 동안 서비스가 유지되는지 확인한다.
 
 1. Railway에서 GitHub 저장소 `myy-dev/B6-3`를 연결한다.
 2. 빌드 명령은 `pip install -r requirements.txt`, 시작 명령은 `uvicorn main:app --host 0.0.0.0 --port $PORT`로 설정한다. 같은 실행 명령이 `Procfile`에도 정의돼 있다.

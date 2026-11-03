@@ -43,3 +43,7 @@ GitHub Actions는 push와 pull request마다 컴파일, 도메인·저장소 회
 - 다른 포트로 실행했다면 `FLOWTASK_BASE_URL`도 같은 주소로 변경한다.
 - 위 SQLite 버전별 결과와 2026-07-28 QA 점수는 기존 검증 기록이다. `.gstack/`는 로컬 검사 산출물이며 Git 추적 대상에서 제외돼 있다.
 - 제출용 화면 자료는 [화면 자료 문서](screenshots.md)에 정리돼 있다.
+
+## 공개 서버 검증
+
+2026-11-03 [Railway 공개 서버](https://flowtask-production-b5b4.up.railway.app/)에서 HTTP 통합 검사로 기본 사용자 흐름을 검증했다. 브라우저에서도 데모 로그인, 프로젝트·할 일 생성, 대기 → 진행 중 → 완료 상태 변경을 확인했다. HTTPS 프록시 뒤에서 스타일 파일이 공개 사이트의 HTTPS 주소로 로드되는지 확인하는 회귀 검사도 포함한다. GitHub 소셜 로그인은 미설정 오류 처리까지만 확인했으며 실계정 로그인 검증은 남아 있다.
