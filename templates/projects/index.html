@@ -3,15 +3,15 @@
 {% block content %}
 <section class="workspace">
   <header class="page-heading">
-    <div><p class="eyebrow">MY WORKSPACE</p><h1>{{ current_user.display_name }}님의 프로젝트</h1><p>흩어진 할 일을 프로젝트 단위로 모아 흐름을 확인하세요.</p></div>
+    <div><h1>{{ current_user.display_name }}님의 프로젝트</h1></div>
     <a class="button button-secondary" href="#new-project">+ 새 프로젝트</a>
   </header>
 
   <div class="metrics" aria-label="작업 요약">
-    <article><span>프로젝트</span><strong>{{ project_count }}</strong><small>진행 공간</small></article>
-    <article><span>전체 할 일</span><strong>{{ task_count }}</strong><small>등록된 작업</small></article>
-    <article><span>완료</span><strong>{{ completed_count }}</strong><small>마친 작업</small></article>
-    <article class="metric-accent"><span>완료율</span><strong>{{ completion_rate }}%</strong><small>전체 기준</small></article>
+    <article><span>프로젝트</span><strong>{{ project_count }}</strong></article>
+    <article><span>전체 할 일</span><strong>{{ task_count }}</strong></article>
+    <article><span>완료</span><strong>{{ completed_count }}</strong></article>
+    <article class="metric-accent"><span>완료율</span><strong>{{ completion_rate }}%</strong></article>
   </div>
 
   <div class="content-grid">
@@ -29,20 +29,18 @@
           <a class="project-card" href="/app/projects/{{ project.id }}">
             <div class="project-card-top"><span class="project-icon">{{ project.name[0] }}</span><span class="task-count">{{ project.tasks|length }} tasks</span></div>
             <h2>{{ project.name }}</h2>
-            <p>{{ project.description or '설명이 없는 프로젝트입니다.' }}</p>
+            {% if project.description %}<p>{{ project.description }}</p>{% endif %}
             <div class="project-meta"><span>{{ project.created_at.strftime('%Y.%m.%d') }}</span><span>열기 →</span></div>
           </a>
           {% endfor %}
         </div>
       {% else %}
-        <div class="empty-state"><span>◇</span><h2>{% if q %}검색 결과가 없습니다{% else %}첫 프로젝트를 만들어 보세요{% endif %}</h2><p>{% if q %}다른 검색어를 시도해 보세요.{% else %}오른쪽 입력란에서 목표와 할 일을 묶을 공간을 만들 수 있습니다.{% endif %}</p></div>
+        <div class="empty-state"><span>◇</span><h2>{% if q %}검색 결과가 없습니다{% else %}프로젝트가 없습니다{% endif %}</h2></div>
       {% endif %}
     </div>
 
     <aside class="create-panel" id="new-project">
-      <span class="panel-badge">NEW</span>
       <h2>새 프로젝트</h2>
-      <p>함께 관리할 일의 이름을 정하세요.</p>
       <form action="/app/projects" method="post" class="stack-form">
         <input type="hidden" name="csrf" value="{{ csrf_token }}">
         <label>프로젝트 이름<input name="name" minlength="2" maxlength="100" placeholder="예: 여름 캠페인" required></label>

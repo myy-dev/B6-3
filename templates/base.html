@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="프로젝트의 흐름을 한눈에 관리하는 FlowTask">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}?v={{ styles_version }}">
 </head>
 <body>
   <header class="site-header">
@@ -35,8 +35,7 @@
   <main>{% block content %}{% endblock %}</main>
 
   <footer class="site-footer">
-    <span>FlowTask</span>
-    <span>일의 흐름을 분명하게.</span>
+    <span>© myy-dev</span>
   </footer>
 </body>
 </html>

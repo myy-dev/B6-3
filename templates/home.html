@@ -3,13 +3,10 @@
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
-    <p class="eyebrow">PROJECT FLOW, SIMPLIFIED</p>
     <h1>해야 할 일을<br><span>흐름으로 바꾸세요.</span></h1>
-    <p class="hero-description">프로젝트와 할 일을 연결하고, 대기부터 완료까지의 변화를 한눈에 기록하는 가벼운 워크스페이스입니다.</p>
     <div class="hero-actions">
       {% if current_user %}
         <a class="button button-primary button-large" href="/app/projects">내 프로젝트로 이동</a>
-        <span class="muted">{{ current_user.display_name }}님으로 로그인됨</span>
       {% else %}
         <a class="button button-primary button-large" href="/signup">지금 시작하기</a>
         <a class="button button-secondary button-large" href="/login">로그인</a>
@@ -38,10 +35,5 @@
   </div>
 </section>
 
-<section class="feature-grid">
-  <article><span class="feature-number">01</span><h2>관계를 한눈에</h2><p>내 프로젝트와 연결된 할 일을 한 화면에서 확인합니다.</p></article>
-  <article><span class="feature-number">02</span><h2>상태를 명확하게</h2><p>대기, 진행 중, 완료의 변화를 기록하고 다음 행동을 결정합니다.</p></article>
-  <article><span class="feature-number">03</span><h2>내 데이터만 안전하게</h2><p>로그인한 사용자만 자신의 워크스페이스에 접근할 수 있습니다.</p></article>
-</section>
 {% endblock %}
 

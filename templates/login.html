@@ -3,14 +3,10 @@
 {% block content %}
 <section class="auth-shell">
   <div class="auth-intro">
-    <p class="eyebrow">WELCOME BACK</p>
     <h1>흐름을 이어갈<br>시간입니다.</h1>
-    <p>로그인하면 나의 프로젝트와 할 일을 안전하게 확인할 수 있습니다.</p>
-    <div class="demo-account"><span>테스트 계정</span><code>demo / demo1234</code></div>
   </div>
   <div class="auth-card">
     <h2>로그인</h2>
-    <p class="muted">계정 정보를 입력해 주세요.</p>
     {% if error %}<div class="form-error" role="alert">{{ error }}</div>{% endif %}
     <form action="/login" method="post" class="stack-form">
       <input type="hidden" name="csrf" value="{{ csrf_token }}">
@@ -21,7 +17,7 @@
     </form>
     <div class="separator"><span>또는</span></div>
     <a class="button button-github button-full" href="/auth/github" rel="nofollow">GitHub로 계속하기</a>
-    <p class="auth-switch">계정이 없나요? <a href="/signup">회원가입</a></p>
+    <p class="auth-switch"><a href="/signup">회원가입</a></p>
   </div>
 </section>
 {% endblock %}

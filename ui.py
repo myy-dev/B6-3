@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from passlib.utils import MAX_PASSWORD_SIZE
 
 from auth.security import csrf_token
 from models import User
@@ -28,8 +30,10 @@ def render(
     payload = {
         "request": request,
         "app_name": "FlowTask",
+        "styles_version": Path("static/styles.css").stat().st_mtime_ns,
         "current_user": user,
         "csrf_token": csrf_token(request),
+        "password_max_length": MAX_PASSWORD_SIZE,
         "flash": request.session.pop("flash", None),
         **context,
     }
