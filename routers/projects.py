@@ -65,8 +65,7 @@ def project_detail(
     status: Annotated[str, Query()] = "",
     q: Annotated[str, Query()] = "",
 ):
-    project = ProjectService(db).get_owned_project(project_id, user.id)
-    tasks = TaskService(db).list_tasks(
+    project, tasks = TaskService(db).get_project_detail(
         project_id=project_id,
         owner_id=user.id,
         status=status,

@@ -8,6 +8,11 @@ from fastapi import Request
 from exceptions import AppError
 
 
+def start_session(request: Request, user_id: int) -> None:
+    request.session.clear()
+    request.session["user_id"] = user_id
+
+
 def csrf_token(request: Request) -> str:
     token = request.session.get("csrf_token")
     if not isinstance(token, str):
@@ -19,7 +24,7 @@ def csrf_token(request: Request) -> str:
 def validate_csrf(request: Request, submitted_token: str) -> None:
     expected = request.session.get("csrf_token")
     if not isinstance(expected, str) or not hmac.compare_digest(
-        expected, submitted_token
+        expected.encode("utf-8"), submitted_token.encode("utf-8")
     ):
         raise AppError("요청 검증에 실패했습니다. 페이지를 새로고침해 주세요.", status_code=403)
 

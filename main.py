@@ -45,7 +45,8 @@ app.include_router(projects_router)
 async def authentication_required_handler(
     request: Request, _exc: AuthenticationRequired
 ):
-    next_url = quote(request.url.path, safe="/")
+    next_path = request.url.path if request.method in {"GET", "HEAD"} else "/app/projects"
+    next_url = quote(next_path, safe="/")
     return RedirectResponse(f"/login?next={next_url}", status_code=303)
 
 

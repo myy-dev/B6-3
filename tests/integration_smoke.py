@@ -18,6 +18,13 @@ import urllib.request
 BASE_URL = os.getenv("FLOWTASK_BASE_URL", "http://127.0.0.1:8000")
 
 
+def csrf_from_html(body: str) -> str:
+    match = re.search(r'name="csrf" value="([^"]+)"', body)
+    if not match:
+        raise AssertionError("CSRF token not found in response HTML")
+    return match.group(1)
+
+
 class Browser:
     def __init__(self) -> None:
         self.cookies = http.cookiejar.CookieJar()
@@ -46,13 +53,81 @@ class Browser:
         status, _url, body = self.request(path)
         if status != 200:
             raise AssertionError(f"GET {path} returned {status}")
-        match = re.search(r'name="csrf" value="([^"]+)"', body)
-        if not match:
-            raise AssertionError(f"CSRF token not found on {path}")
-        return match.group(1), body
+        return csrf_from_html(body), body
 
 
 class FlowTaskIntegrationTest(unittest.TestCase):
+    def test_expired_post_returns_to_project_list_after_login(self) -> None:
+        browser = Browser()
+        status, final_url, body = browser.request(
+            "/app/tasks/1/status", data={"csrf": "expired", "new_status": "todo"}
+        )
+        self.assertEqual(status, 200)
+        match = re.search(r'name="next_url" value="([^"]+)"', body)
+        self.assertIsNotNone(match)
+        status, final_url, _body = browser.request("/login", data={
+            "csrf": csrf_from_html(body), "username": "demo", "password": "demo1234",
+            "next_url": match.group(1),
+        })
+        self.assertEqual(status, 200)
+        self.assertTrue(final_url.endswith("/app/projects"))
+
+    def test_unicode_tokens_return_validation_errors(self) -> None:
+        browser = Browser()
+        browser.csrf("/login")
+        status, _url, _body = browser.request("/login", data={
+            "csrf": "한글", "username": "demo", "password": "demo1234",
+        })
+        self.assertEqual(status, 403)
+        status, _url, _body = browser.request("/auth/github")
+        self.assertEqual(status, 503)
+        query = urllib.parse.urlencode({"code": "unused", "state": "한글"})
+        status, _url, _body = browser.request(f"/auth/github/callback?{query}")
+        self.assertEqual(status, 401)
+
+    def test_oversized_passwords_return_form_errors(self) -> None:
+        browser = Browser()
+        for path, expected_status, extra in (
+            ("/signup", 400, {"username": "oversized", "display_name": "길이 검사"}),
+            ("/login", 401, {"username": "demo"}),
+        ):
+            with self.subTest(path=path):
+                token, body = browser.csrf(path)
+                status, _url, body = browser.request(path, data={
+                    "csrf": token, "password": "x" * 4097, **extra,
+                })
+                self.assertEqual(status, expected_status)
+                self.assertIn('class="form-error"', body)
+
+    def test_non_bmp_password_can_be_entered_and_used_for_login(self) -> None:
+        browser = Browser()
+        token, body = browser.csrf("/signup")
+        password_input = re.search(r'<input\b[^>]*\bname="password"[^>]*>', body)
+        self.assertIsNotNone(password_input)
+        self.assertNotIn("maxlength=", password_input.group(0))
+        username = f"emoji_{time.time_ns()}"
+        password = "😀" * 3000
+        self.assertGreater(len(password.encode("utf-16-le")) // 2, 4096)
+        status, _url, body = browser.request("/signup", data={
+            "csrf": token, "username": username, "display_name": "유니코드 검사",
+            "password": password,
+        })
+        self.assertEqual(status, 200)
+        status, _url, _body = browser.request(
+            "/logout", data={"csrf": csrf_from_html(body)}
+        )
+        self.assertEqual(status, 200)
+        token, body = browser.csrf("/login")
+        password_input = re.search(r'<input\b[^>]*\bname="password"[^>]*>', body)
+        self.assertIsNotNone(password_input)
+        self.assertNotIn("maxlength=", password_input.group(0))
+        status, final_url, body = browser.request("/login", data={
+            "csrf": token, "username": username, "password": password,
+        })
+        self.assertEqual(status, 200)
+        self.assertTrue(final_url.endswith("/app/projects"))
+        self.assertIn("유니코드 검사님의 프로젝트", body)
+
     def test_complete_user_flow(self) -> None:
         anonymous = Browser()
         status, final_url, body = anonymous.request("/app/projects")
@@ -80,12 +155,11 @@ class FlowTaskIntegrationTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(final_url.endswith("/app/projects"))
         self.assertIn("데모 사용자님의 프로젝트", body)
+        self.assertNotEqual(token, csrf_from_html(body))
 
         suffix = str(int(time.time() * 1000))
         project_name = f"통합 테스트 {suffix}"
-        token_match = re.search(r'name="csrf" value="([^"]+)"', body)
-        self.assertIsNotNone(token_match)
-        token = token_match.group(1)
+        token = csrf_from_html(body)
         status, project_url, body = browser.request("/app/projects", data={
             "csrf": token,
             "name": project_name,
@@ -97,7 +171,7 @@ class FlowTaskIntegrationTest(unittest.TestCase):
         self.assertIn("소유자 데모 사용자", body)
         project_id = int(project_url.rsplit("/", 1)[1])
 
-        token = re.search(r'name="csrf" value="([^"]+)"', body).group(1)
+        token = csrf_from_html(body)
         task_title = f"상태 전이 {suffix}"
         status, _url, body = browser.request(
             f"/app/projects/{project_id}/tasks",
@@ -114,7 +188,7 @@ class FlowTaskIntegrationTest(unittest.TestCase):
         self.assertIsNotNone(task_match)
         task_id = int(task_match.group(1))
 
-        token = re.search(r'name="csrf" value="([^"]+)"', body).group(1)
+        token = csrf_from_html(body)
         status, _url, body = browser.request(
             f"/app/tasks/{task_id}/status",
             data={"csrf": token, "new_status": "in_progress"},
@@ -122,7 +196,7 @@ class FlowTaskIntegrationTest(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("대기 → 진행 중", body)
 
-        token = re.search(r'name="csrf" value="([^"]+)"', body).group(1)
+        token = csrf_from_html(body)
         status, _url, body = browser.request(
             f"/app/tasks/{task_id}/status",
             data={"csrf": token, "new_status": "completed"},
@@ -154,11 +228,48 @@ class FlowTaskIntegrationTest(unittest.TestCase):
         })
         self.assertEqual(status, 200)
         self.assertIn("다른 사용자님의 프로젝트", body)
+        self.assertNotEqual(token, csrf_from_html(body))
         status, _url, body = outsider.request(f"/app/projects/{project_id}")
         self.assertEqual(status, 403)
         self.assertIn("접근할 권한이 없습니다", body)
 
-        token, _body = browser.csrf(f"/app/projects/{project_id}")
+        token, _body = outsider.csrf("/app/projects")
+        for path, data in (
+            (f"/app/projects/{project_id}/tasks", {"title": "침입", "description": ""}),
+            (f"/app/tasks/{task_id}/status", {"new_status": "todo"}),
+            (f"/app/tasks/{task_id}/delete", {}),
+            (f"/app/projects/{project_id}/delete", {}),
+        ):
+            with self.subTest(unauthorized_path=path):
+                status, _url, _body = outsider.request(path, data={"csrf": token, **data})
+                self.assertEqual(status, 403)
+
+        token, body = browser.csrf(f"/app/projects/{project_id}")
+        self.assertIn("다시 열기", body)
+        for new_status, message in (
+            ("todo", "완료 → 대기"),
+            ("in_progress", "대기 → 진행 중"),
+            ("todo", "진행 중 → 대기"),
+        ):
+            status, _url, body = browser.request(
+                f"/app/tasks/{task_id}/status",
+                data={"csrf": token, "new_status": new_status},
+            )
+            self.assertEqual(status, 200)
+            self.assertIn(message, body)
+        status, _url, body = browser.request(
+            f"/app/tasks/{task_id}/delete", data={"csrf": token}
+        )
+        self.assertEqual(status, 200)
+        self.assertNotIn(task_title, body)
+        status, final_url, body = browser.request(
+            f"/app/projects/{project_id}/delete", data={"csrf": token}
+        )
+        self.assertEqual(status, 200)
+        self.assertTrue(final_url.endswith("/app/projects"))
+        self.assertNotIn(project_name, body)
+
+        token = csrf_from_html(body)
         status, final_url, body = browser.request(
             "/logout", data={"csrf": token}
         )

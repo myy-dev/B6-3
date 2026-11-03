@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from models import Project, Task
@@ -14,7 +14,11 @@ class ProjectRepository:
         statement = (
             select(Project)
             .where(Project.owner_id == owner_id)
-            .options(selectinload(Project.tasks))
+            .options(
+                selectinload(
+                    Project.tasks.and_(Task.project.has(Project.owner_id == owner_id))
+                )
+            )
             .order_by(Project.created_at.desc())
         )
         if query:
@@ -24,23 +28,28 @@ class ProjectRepository:
             )
         return list(self.db.scalars(statement).all())
 
-    def get_with_tasks(self, project_id: int) -> Project | None:
-        return self.db.scalar(
-            select(Project)
-            .where(Project.id == project_id)
-            .options(selectinload(Project.tasks), selectinload(Project.owner))
-        )
+    def get_by_id(self, project_id: int) -> Project | None:
+        return self.db.get(Project, project_id)
 
     def create(self, *, owner_id: int, name: str, description: str) -> Project:
         project = Project(owner_id=owner_id, name=name, description=description)
         self.db.add(project)
         self.db.commit()
-        self.db.refresh(project)
         return project
 
-    def delete(self, project: Project) -> None:
-        self.db.delete(project)
+    def delete(self, project: Project, *, owner_id: int) -> bool:
+        # DB cascade removes children only when the authorized parent is deleted.
+        result = self.db.execute(
+            delete(Project)
+            .where(Project.id == project.id, Project.owner_id == owner_id)
+            .execution_options(synchronize_session="fetch")
+        )
+        if result.rowcount != 1:
+            self.db.rollback()
+            return False
         self.db.commit()
+        self.db.expire_all()
+        return True
 
     def dashboard_counts(self, owner_id: int) -> tuple[int, int, int]:
         project_count = self.db.scalar(

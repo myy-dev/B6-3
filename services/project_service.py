@@ -15,7 +15,7 @@ class ProjectService:
         return self.projects.list_for_owner(owner_id, query=query.strip())
 
     def get_owned_project(self, project_id: int, owner_id: int) -> Project:
-        project = self.projects.get_with_tasks(project_id)
+        project = self.projects.get_by_id(project_id)
         if not project:
             raise NotFoundError("프로젝트를 찾을 수 없습니다.")
         if project.owner_id != owner_id:
@@ -37,7 +37,11 @@ class ProjectService:
 
     def delete_project(self, *, project_id: int, owner_id: int) -> None:
         project = self.get_owned_project(project_id, owner_id)
-        self.projects.delete(project)
+        if not self.projects.delete(project, owner_id=owner_id):
+            raise AppError(
+                "다른 요청에서 프로젝트가 변경되었습니다. 페이지를 새로고침해 주세요.",
+                status_code=409,
+            )
 
     def dashboard_counts(self, owner_id: int) -> tuple[int, int, int]:
         return self.projects.dashboard_counts(owner_id)

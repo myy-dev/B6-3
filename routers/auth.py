@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse
 
 from auth.dependencies import CurrentUser, DbSession, OptionalUser
 from auth.oauth import fetch_github_user, github_authorize_url
-from auth.security import safe_next_url, validate_csrf
+from auth.security import safe_next_url, start_session, validate_csrf
 from exceptions import AppError
 from services import AuthService
 from ui import add_flash, render
@@ -56,8 +56,7 @@ def login(
             error=exc.message,
             username=username,
         )
-    request.session.clear()
-    request.session["user_id"] = user.id
+    start_session(request, user.id)
     add_flash(request, f"{user.display_name}님, 다시 오신 것을 환영합니다.")
     return RedirectResponse(safe_next_url(next_url), status_code=303)
 
@@ -95,8 +94,7 @@ def signup(
             username=username,
             display_name=display_name,
         )
-    request.session.clear()
-    request.session["user_id"] = user.id
+    start_session(request, user.id)
     add_flash(request, "회원가입이 완료되었습니다. 첫 프로젝트를 만들어 보세요.")
     return RedirectResponse("/app/projects", status_code=303)
 
@@ -109,10 +107,7 @@ def logout(
 ):
     validate_csrf(request, csrf)
     request.session.clear()
-    request.session["flash"] = {
-        "message": "안전하게 로그아웃되었습니다.",
-        "category": "success",
-    }
+    add_flash(request, "안전하게 로그아웃되었습니다.")
     return RedirectResponse("/", status_code=303)
 
 
@@ -131,7 +126,9 @@ def github_callback(
     state: str = "",
 ):
     expected_state = request.session.pop("oauth_state", None)
-    if not expected_state or not secrets.compare_digest(expected_state, state):
+    if not expected_state or not secrets.compare_digest(
+        expected_state.encode("utf-8"), state.encode("utf-8")
+    ):
         raise AppError("소셜 로그인 요청 상태가 올바르지 않습니다.", status_code=401)
     if not code:
         raise AppError("GitHub에서 인증 코드를 전달받지 못했습니다.", status_code=401)
@@ -143,7 +140,6 @@ def github_callback(
         suggested_username=profile["username"],
         display_name=profile["display_name"],
     )
-    request.session.clear()
-    request.session["user_id"] = user.id
+    start_session(request, user.id)
     add_flash(request, "GitHub 계정으로 로그인했습니다.")
     return RedirectResponse("/app/projects", status_code=303)
