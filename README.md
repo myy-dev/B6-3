@@ -71,9 +71,7 @@ B6-3/
     ├── authentication.md       # 테스트 계정과 인증 방식
     ├── routes.md               # 공개·보호 정책과 주요 기능 경로
     ├── testing.md              # 테스트 실행과 기존 검증 기록
-    ├── deployment.md           # 환경 변수, GitHub OAuth, Render 무료 배포
-    ├── screenshots.md          # 실행 화면 자료
-    └── screenshots/
+    └── deployment.md           # 환경 변수, GitHub OAuth, Render 무료 배포
 ```
 
 ## 배포 주소
@@ -209,4 +207,3 @@ uvicorn main:app --reload
 - [서비스 구조와 동작](docs/architecture.md): 인증·인가 흐름, 모델 관계, 상태 전이, 보안 설계, 학습 목표
 - [테스트와 검증](docs/testing.md): 검사 실행 방법, SQLite 호환성, 기존 QA 기록
 - [환경 변수와 배포](docs/deployment.md): 로컬·운영 환경 설정, GitHub OAuth, Render 무료 배포
-- [화면 자료](docs/screenshots.md): 홈·프로젝트 상세·모바일 실행 화면
