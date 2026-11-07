@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from exceptions import AppError, NotFoundError
+from core.exceptions import AppError, NotFoundError
 from models import Project, Task, TaskStatus
 from repositories import TaskRepository
 from services.project_service import ProjectService

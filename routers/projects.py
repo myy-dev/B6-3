@@ -9,7 +9,7 @@ from auth.dependencies import CurrentUser, DbSession
 from auth.security import validate_csrf
 from models import TaskStatus
 from services import ProjectService, TaskService
-from ui import add_flash, render
+from core.ui import add_flash, render
 
 
 router = APIRouter(prefix="/app", tags=["projects"])

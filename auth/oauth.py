@@ -5,8 +5,8 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from config import settings
-from exceptions import AppError
+from core.config import settings
+from core.exceptions import AppError
 
 
 GITHUB_AUTHORIZE_URL = "https://github.com/login/oauth/authorize"

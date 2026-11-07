@@ -9,9 +9,9 @@ from fastapi.responses import RedirectResponse
 from auth.dependencies import CurrentUser, DbSession, OptionalUser
 from auth.oauth import fetch_github_user, github_authorize_url
 from auth.security import safe_next_url, start_session, validate_csrf
-from exceptions import AppError
+from core.exceptions import AppError
 from services import AuthService
-from ui import add_flash, render
+from core.ui import add_flash, render
 
 
 router = APIRouter()

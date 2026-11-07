@@ -18,7 +18,7 @@ TEMP_DIR = tempfile.TemporaryDirectory()
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ["DATABASE_URL"] = f"sqlite:///{Path(TEMP_DIR.name) / 'bootstrap.db'}"
 
-from database import Base, enable_sqlite_foreign_keys  # noqa: E402
+from core.database import Base, enable_sqlite_foreign_keys  # noqa: E402
 from models import Project, Task  # noqa: E402
 from services import AuthService, ProjectService, TaskService  # noqa: E402
 

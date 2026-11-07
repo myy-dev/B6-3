@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from auth.dependencies import OptionalUser
-from ui import render
+from core.ui import render
 
 
 router = APIRouter()

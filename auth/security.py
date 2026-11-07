@@ -5,7 +5,7 @@ import secrets
 
 from fastapi import Request
 
-from exceptions import AppError
+from core.exceptions import AppError
 
 
 def start_session(request: Request, user_id: int) -> None:

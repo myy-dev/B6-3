@@ -10,12 +10,12 @@ from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from config import settings
-from database import SessionLocal, create_tables
-from exceptions import AppError, AuthenticationRequired
+from core.config import settings
+from core.database import SessionLocal, create_tables
+from core.exceptions import AppError, AuthenticationRequired
 from routers import auth_router, projects_router, web_router
 from services import AuthService
-from ui import render
+from core.ui import render
 
 
 @asynccontextmanager

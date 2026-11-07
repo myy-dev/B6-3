@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from exceptions import AppError, ForbiddenError, NotFoundError
+from core.exceptions import AppError, ForbiddenError, NotFoundError
 from models import Project
 from repositories import ProjectRepository
 

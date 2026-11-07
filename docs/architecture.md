@@ -20,13 +20,14 @@
 | 계층 | 역할 | 주요 파일 |
 | --- | --- | --- |
 | 앱 구성 | 미들웨어, 라우터 등록, 시작 처리, 전역 예외 처리 | [main.py](../main.py) |
-| 설정·DB | 환경 변수, 엔진, 세션, 테이블 생성 | [config.py](../config.py), [database.py](../database.py) |
+| 설정·DB | 환경 변수, 엔진, 세션, 테이블 생성 | [core/config.py](../core/config.py), [core/database.py](../core/database.py) |
+| 공통 예외 | 인증·인가·도메인 오류 정의 | [core/exceptions.py](../core/exceptions.py) |
 | 인증·인가 | 세션 사용자 조회, 보호 경로 검사, CSRF, OAuth 통신 | [auth/](../auth/) |
 | 라우터 | 요청값 수신, 서비스 호출, 화면 응답과 리다이렉트 | [routers/](../routers/) |
 | 서비스 | 입력 검증, 소유권 확인, 상태 전이 규칙 | [services/](../services/) |
 | 저장소 | SQLAlchemy를 사용한 데이터 조회·변경 | [repositories/](../repositories/) |
 | 모델 | 테이블, 외래 키, 양방향 연관관계 | [models/](../models/) |
-| 화면 | 공통 템플릿 컨텍스트, Jinja2 SSR, 반응형 스타일 | [ui.py](../ui.py), [templates/](../templates/), [static/](../static/) |
+| 화면 | 공통 템플릿 컨텍스트, Jinja2 SSR, 반응형 스타일 | [core/ui.py](../core/ui.py), [templates/](../templates/), [static/](../static/) |
 
 ## 인증과 접근 제어
 

@@ -23,8 +23,8 @@ os.environ["DATABASE_URL"] = f"sqlite:///{DB_PATH}"
 os.environ["APP_SECRET_KEY"] = "domain-check-secret"
 
 from auth.security import start_session, validate_csrf  # noqa: E402
-from database import SessionLocal, create_tables  # noqa: E402
-from exceptions import AppError, ForbiddenError, NotFoundError  # noqa: E402
+from core.database import SessionLocal, create_tables  # noqa: E402
+from core.exceptions import AppError, ForbiddenError, NotFoundError  # noqa: E402
 from models import Project, Task, User  # noqa: E402
 from repositories import UserRepository  # noqa: E402
 from routers.auth import github_callback  # noqa: E402

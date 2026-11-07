@@ -7,7 +7,7 @@ from passlib.utils import MAX_PASSWORD_SIZE
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from exceptions import AppError
+from core.exceptions import AppError
 from models import User
 from repositories import UserRepository
 

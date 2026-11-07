@@ -5,8 +5,8 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
-from database import get_db
-from exceptions import AuthenticationRequired
+from core.database import get_db
+from core.exceptions import AuthenticationRequired
 from models import User
 from repositories import UserRepository
 

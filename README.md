@@ -26,10 +26,11 @@ B6-3/
 ├── Procfile                    # 배포 서버 실행 명령
 ├── database.db                 # 최초 실행 시 생성되는 SQLite 파일, Git 제외
 ├── main.py                     # 앱 생성, 미들웨어, 라우터 등록, 전역 예외 처리
-├── config.py                   # 환경 변수 설정
-├── database.py                 # 엔진, 세션, ORM Base, 테이블 생성, SQLite FK 활성화
-├── exceptions.py               # 인증·인가·도메인 예외
-├── ui.py                       # Jinja2 공통 컨텍스트, 알림, 스타일시트 버전 관리
+├── core/                       # 공통 설정과 기반 코드
+│   ├── config.py               # 환경 변수 설정
+│   ├── database.py             # 엔진, 세션, ORM Base, 테이블 생성, SQLite FK 활성화
+│   ├── exceptions.py           # 인증·인가·도메인 예외
+│   └── ui.py                   # Jinja2 공통 컨텍스트, 알림, 스타일시트 버전 관리
 ├── auth/                       # 인증·인가와 OAuth
 │   ├── dependencies.py         # Depends 기반 사용자 조회와 로그인 필수 검사
 │   ├── security.py             # 세션 시작, CSRF, 로그인 후 이동 경로 검증
