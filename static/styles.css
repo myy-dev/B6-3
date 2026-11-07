@@ -38,7 +38,6 @@ main { min-height: calc(100vh - 150px); }
 .button-ghost { background: transparent; border-color: var(--line); }
 .button-github { background: #24292f; color: white; }
 .button-danger { background: #fff2f2; color: var(--red); border-color: #f1cece; }
-.button-large { min-height: 52px; padding-inline: 24px; }
 .button-small { min-height: 36px; padding: 7px 13px; font-size: 13px; }
 .button-full { width: 100%; }
 .text-button { border: 0; background: transparent; padding: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
@@ -47,12 +46,10 @@ main { min-height: calc(100vh - 150px); }
 
 .hero { width: calc(100% - clamp(72px, 5vw, 96px)); max-width: 1600px; min-height: 630px; margin: auto; padding: 90px 0 70px; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(48px, 5vw, 96px); align-items: center; }
 .eyebrow { margin: 0 0 15px; font-size: 12px; font-weight: 800; letter-spacing: 2.2px; color: var(--green); }
-.hero h1 { margin: 0 0 40px; font-size: clamp(52px, 5.5vw, 76px); letter-spacing: -4px; line-height: 1.02; word-break: keep-all; }
+.hero h1 { margin: 0; font-size: clamp(52px, 5.5vw, 76px); letter-spacing: -4px; line-height: 1.02; word-break: keep-all; }
 .hero h1 span { color: var(--green); position: relative; }
 .hero h1 span::after { content: ""; position: absolute; left: 2px; right: 0; bottom: -7px; height: 9px; background: var(--lime); z-index: -1; transform: rotate(-1deg); }
 .hero-description { max-width: 540px; margin: 34px 0; font-size: 18px; color: var(--muted); }
-.hero-actions { display: flex; align-items: center; gap: 14px; }
-.hero-actions > .button { min-width: 160px; }
 .muted { color: var(--muted); }
 .hero-board { width: 100%; max-width: 620px; justify-self: end; background: var(--ink); color: white; padding: 32px; border-radius: 28px; box-shadow: 25px 25px 0 var(--lime), var(--shadow); transform: rotate(1.5deg); }
 .board-top { display: flex; justify-content: space-between; margin-bottom: 25px; font-weight: 700; }
@@ -179,7 +176,6 @@ textarea { resize: vertical; }
   .hero { padding: 55px 22px; gap: 50px; }
   .hero h1 { font-size: 47px; letter-spacing: -2.5px; }
   .hero-board { padding: 22px; box-shadow: 12px 12px 0 var(--lime); }
-  .hero-actions { align-items: stretch; flex-direction: column; }
   .workspace { width: min(100% - 28px, 1200px); padding-top: 35px; }
   .page-heading, .project-heading { align-items: flex-start; flex-direction: column; }
   .page-heading h1, .project-heading h1 { font-size: 30px; }

@@ -4,14 +4,6 @@
 <section class="hero">
   <div class="hero-copy">
     <h1>해야 할 일을<br><span>흐름으로 바꾸세요.</span></h1>
-    <div class="hero-actions">
-      {% if current_user %}
-        <a class="button button-primary button-large" href="/app/projects">내 프로젝트로 이동</a>
-      {% else %}
-        <a class="button button-primary button-large" href="/signup">지금 시작하기</a>
-        <a class="button button-secondary button-large" href="/login">로그인</a>
-      {% endif %}
-    </div>
   </div>
   <div class="hero-board" aria-label="FlowTask 상태 흐름 미리보기">
     <div class="board-top"><span>이번 주 제품 출시</span><span class="board-count">6 tasks</span></div>
