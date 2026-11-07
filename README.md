@@ -173,7 +173,7 @@ uvicorn main:app --reload
 
 - [x] GitHub OAuth2 Authorization Code Flow 구현
 - [x] OAuth state 검증과 GitHub 계정 기반 사용자 연결
-- [ ] Render 배포 주소에서 실제 GitHub 계정 로그인과 세션 유지 재확인
+- [x] Render 배포 주소에서 실제 GitHub 계정 로그인과 세션 유지 확인
 
 ### 비밀번호 해싱과 회원가입
 
@@ -203,8 +203,6 @@ uvicorn main:app --reload
 
 ## 결과물
 
-- [로컬 실행](#로컬-실행): 가상환경 생성·패키지 설치·서버 실행 방법
-- [배포 서비스](https://b6-3.onrender.com/): Render 공개 주소
 - [테스트 계정과 인증 방식](docs/authentication.md): 데모 계정, 세션 인증 선택 이유, 비밀번호 저장 방식
 - [경로와 접근 정책](docs/routes.md): 공개·보호 경로 정책과 주요 기능 경로
 - [서비스 구조와 동작](docs/architecture.md): 인증·인가 흐름, 모델 관계, 상태 전이, 보안 설계, 학습 목표

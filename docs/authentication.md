@@ -14,7 +14,7 @@
 
 ## GitHub 계정 연결
 
-2026-11-04 이전 배포 환경에서 실제 GitHub 계정 로그인과 세션 유지를 확인했다. Render에서는 새 주소에 맞춰 OAuth 설정을 변경한 뒤 다시 검증해야 한다.
+2026-11-07 사용자가 [Render 공개 서비스](https://b6-3.onrender.com/)에서 실제 GitHub 계정 로그인 후 새로고침해도 로그인 상태가 유지되는 것을 직접 확인했다.
 
 - GitHub 계정은 `oauth_provider="github"`와 `oauth_subject` 조합으로 식별한다.
 - 처음 로그인하면 해당 GitHub 계정의 사용자를 생성하고, 이미 연결된 계정이면 기존 사용자를 조회한다.
