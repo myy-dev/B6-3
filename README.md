@@ -6,28 +6,23 @@ FastAPI와 SQLAlchemy를 사용해 사용자 인증·인가, 모델 연관관계
 
 ## 기술 스택
 
-| 구분 | 기술 |
-| --- | --- |
-| 언어 | Python 3.10 이상, 로컬 검증 3.14.5 |
-| 웹 프레임워크 | FastAPI 0.116.1 |
-| ASGI 서버 | Uvicorn 0.35.0 |
-| ORM | SQLAlchemy 2.0.41 |
-| 데이터베이스 | SQLite |
-| 서버 템플릿 | Jinja2 3.1.6 |
-| 화면 구성 | HTML, CSS |
-| 폼 데이터 파싱 | python-multipart 0.0.20 |
-| 세션 쿠키 서명 | Starlette SessionMiddleware, itsdangerous 2.2.0 |
-| 비밀번호 해싱 | passlib 1.7.4, PBKDF2-SHA256 |
+| 구분         | 기술              |
+| ------------ | ----------------- |
+| 언어         | Python 3.10 이상  |
+| 프레임워크   | FastAPI 0.116.1   |
+| ASGI 서버    | Uvicorn 0.35.0    |
+| ORM          | SQLAlchemy 2.0.41 |
+| 데이터베이스 | SQLite            |
 
 ## 프로젝트 구조
 
 ```text
 B6-3/
-├── .github/workflows/test.yml   # 컴파일·도메인·저장소·HTTP 통합 검사
 ├── .env.example                # 환경 변수 예시
 ├── .gitignore
 ├── README.md
 ├── requirements.txt            # 직접 의존성과 버전
+├── render.yaml                 # Render 무료 웹 서비스 배포 설정
 ├── Procfile                    # 배포 서버 실행 명령
 ├── database.db                 # 최초 실행 시 생성되는 SQLite 파일, Git 제외
 ├── main.py                     # 앱 생성, 미들웨어, 라우터 등록, 전역 예외 처리
@@ -75,36 +70,24 @@ B6-3/
     ├── authentication.md       # 테스트 계정과 인증 방식
     ├── routes.md               # 공개·보호 정책과 주요 기능 경로
     ├── testing.md              # 테스트 실행과 기존 검증 기록
-    ├── deployment.md           # 환경 변수, GitHub OAuth, Railway 영구 볼륨 배포
+    ├── deployment.md           # 환경 변수, GitHub OAuth, Render 무료 배포
     ├── screenshots.md          # 실행 화면 자료
     └── screenshots/
 ```
 
-## 실행
+## 배포 주소
 
-저장소 루트에서 실행한다.
+<https://b6-3.onrender.com/>
 
-### macOS / Linux
+## 로컬 실행
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
+# http://127.0.0.1:8000 접속
 ```
-
-### Windows
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-브라우저에서 <http://127.0.0.1:8000>에 접속한다. 최초 실행 시 `database.db`, 테이블과 테스트 계정이 자동 생성된다. 다른 포트가 필요하면 실행 명령에 `--port 8001`처럼 지정한다.
-
-테스트 계정은 [테스트 계정과 인증 방식](docs/authentication.md), 환경 변수와 외부 서비스 설정은 [환경 변수와 배포](docs/deployment.md), 검사 명령은 [테스트와 검증](docs/testing.md)을 참고한다.
 
 ## 수행 항목 체크리스트
 
@@ -173,15 +156,6 @@ uvicorn main:app --reload
 - [x] 데이터 변경 성공 후 HTTP 303으로 GET 화면에 이동
 - [x] 데스크톱·모바일 반응형 화면 구성
 
-### 제출물
-
-- [x] 전체 소스코드 [GitHub 저장소](https://github.com/myy-dev/B6-3) 구성
-- [x] Python·주요 패키지 버전 명시
-- [x] 가상환경·설치·실행 방법 명시
-- [x] [테스트 계정과 인증 방식 선택 이유](docs/authentication.md) 문서화
-- [x] [공개·보호 경로 정책 표와 주요 기능 경로 목록](docs/routes.md) 작성
-- [x] 선택 사항인 주요 화면 스크린샷 포함
-
 ## 보너스 과제
 
 ### 전역 예외 처리
@@ -199,7 +173,7 @@ uvicorn main:app --reload
 
 - [x] GitHub OAuth2 Authorization Code Flow 구현
 - [x] OAuth state 검증과 GitHub 계정 기반 사용자 연결
-- [ ] 실제 GitHub 계정과 배포 주소를 통한 최종 로그인 확인
+- [ ] Render 배포 주소에서 실제 GitHub 계정 로그인과 세션 유지 재확인
 
 ### 비밀번호 해싱과 회원가입
 
@@ -210,8 +184,8 @@ uvicorn main:app --reload
 ### 외부 배포
 
 - [x] 환경 변수 기반 실행 설정과 배포 시작 명령 구성
-- [x] Railway 웹 서비스·SQLite 영구 볼륨 배포 절차 문서화
-- [x] Railway에 실제 배포하고 외부 접속 URL 제출
+- [x] Render 무료 웹 서비스·SQLite 배포 설정과 절차 문서화
+- [x] Render에 실제 배포하고 외부 접속 URL 제출
 
 ## 제약 사항
 
@@ -229,10 +203,11 @@ uvicorn main:app --reload
 
 ## 결과물
 
-- [배포 서비스](https://flowtask-production-b5b4.up.railway.app/): Railway 공개 주소
+- [로컬 실행](#로컬-실행): 가상환경 생성·패키지 설치·서버 실행 방법
+- [배포 서비스](https://b6-3.onrender.com/): Render 공개 주소
 - [테스트 계정과 인증 방식](docs/authentication.md): 데모 계정, 세션 인증 선택 이유, 비밀번호 저장 방식
 - [경로와 접근 정책](docs/routes.md): 공개·보호 경로 정책과 주요 기능 경로
 - [서비스 구조와 동작](docs/architecture.md): 인증·인가 흐름, 모델 관계, 상태 전이, 보안 설계, 학습 목표
 - [테스트와 검증](docs/testing.md): 검사 실행 방법, SQLite 호환성, 기존 QA 기록
-- [환경 변수와 배포](docs/deployment.md): 로컬·운영 환경 설정, GitHub OAuth, Railway 영구 볼륨
+- [환경 변수와 배포](docs/deployment.md): 로컬·운영 환경 설정, GitHub OAuth, Render 무료 배포
 - [화면 자료](docs/screenshots.md): 홈·프로젝트 상세·모바일 실행 화면

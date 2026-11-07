@@ -15,3 +15,9 @@
 ## 모바일 프로젝트
 
 ![모바일 프로젝트 화면](screenshots/project-mobile.png)
+
+## GitHub 소셜 로그인
+
+2026-11-04 이전 배포 환경에서 실제 GitHub 계정으로 로그인한 화면이다. 로그인 성공 안내, 계정 이름과 보호된 프로젝트 화면 진입을 확인했다. Render 배포 검증 화면은 배포 후 갱신한다.
+
+![GitHub 로그인 성공 화면](screenshots/github-login.jpg)
